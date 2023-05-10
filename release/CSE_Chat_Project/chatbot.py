@@ -15,6 +15,7 @@ import logging.handlers
 import os
 import chromedriver_autoinstaller as AutoChrome
 import shutil
+import exhibit
 
 LOG_MAX_SIZE = 1024 *1024 * 10
 
@@ -32,8 +33,8 @@ file_handler = logging.handlers.RotatingFileHandler('log/CSE_Chatbot.log',maxByt
 file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 
-#chatnames = ['src/PNU_ChatBot.PNG']
-chatnames = ['src/test.PNG']
+chatnames = ['src/PNU_ChatBot.PNG']
+#chatnames = ['src/test.PNG']
 
 
 def driverUpdate():
@@ -509,7 +510,34 @@ def Others():
         logger.error("LoadError 기타게시판")
         logger.error(e)
         pass
-        
+    
+exhibit.create_before(2)
+    
+def Exhibit():
+    logger.info("searching 공모전")
+    try:
+        feed = exhibit.create_feed()
+        exhibit_num = exhibit.exhibit_compare(feed)
+        for i in range(0, exhibit_num):
+            exhibit_info = str(exhibit.crawl_exhibit(feed, i))
+            for chatname in chatnames:
+                logger.info(chatname)
+                try:
+                    macroSend(chatname, exhibit_info)
+                except Exception as e:
+                    logger.error("SendError")
+                    logger.error(e)
+                    pass
+                try:
+                    closeChat()
+                except Exception as e:
+                    logger.error("ClosechatError")
+                    logger.error(e)
+                    pass
+    except Exception as e:
+        logger.error("searchingError 공모전")
+        logger.error(e)
+        pass
         
         
 schedule.every().day.at("00:00").do(driverUpdate)
@@ -518,6 +546,7 @@ schedule.every(300).seconds.do(Employoment)
 schedule.every(300).seconds.do(Free)
 schedule.every(300).seconds.do(Notice)
 schedule.every(300).seconds.do(Others)
+schedule.every(3600).seconds.do(Exhibit)
 
 if __name__ == "__main__":
     while True:
